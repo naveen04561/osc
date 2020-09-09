@@ -1,2 +1,0 @@
-# osc
-for osc project
