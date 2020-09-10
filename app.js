@@ -1,10 +1,16 @@
-var express= require('express')
-var http = require('http')
-var mongoose= require('mongoose')
-var body= require('body-parser')
-var app= express()
+var express = require('express')
+var mongoose = require('mongoose')
+var body = require('body-parser')
+var app = express()
 const storage = require('sessionstorage')
-const stor= require('node-sessionstorage')
+const stor = require('node-sessionstorage')
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+
+app.use(passport.initialize());
+app.use(passport.session());
+initializePassport(passport);
+
 
 app.use(express.static('public'))
 app.set("view engine", "ejs")
@@ -38,65 +44,109 @@ var UserSchema = new mongoose.Schema({
 
 var usermodel = mongoose.model("usermodel", UserSchema);
 
-app.get("/login" , function(req, res){
+app.get("/login", function (req, res) {
     res.render("login")
 })
 
-app.get("/register", function(req, res){
+app.get("/register", function (req, res) {
     res.render("register")
 })
 
-app.get("/home", function(req, res){
-    var person = stor.getItem('person')
-    console.log(person.name)
-    res.render("home", {person : person});
-})
+// app.get("/home", function (req, res) {
+//     res.render("home", { person: req.user });
+// })
 
-app.post("/login", function(req, res) {
-    var un=req.body.username;
-    var p=req.body.pass;
-    usermodel.findOne({username: un}, function(err, search){
-        if(err){
-            res.redirect("/login")
-        }
-        else if (p == search.password) {
-            storage.setItem('person', search)
-            stor.setItem('person', search);
-            res.redirect("/home")
-        }
-        else if (p != search.password) {
-            res.redirect("/login")
-        }
-        else {
-            console.log(err)
-            res.redirect("/login")
-        }
-    })    
-});
+// app.post("/login", function(req, res) {
+//     var un=req.body.username;
+//     var p=req.body.pass;
+//     usermodel.findOne({username: un}, function(err, search){
+//         if(err){
+//             res.redirect("/login")
+//         }
+//         else if (p == search.password) {
+//             storage.setItem('person', search)
+//             stor.setItem('person', search);
+//             res.redirect("/home")
+//         }
+//         else if (p != search.password) {
+//             res.redirect("/login")
+//         }
+//         else {
+//             console.log(err)
+//             res.redirect("/login")
+//         }
+//     })    
+// });
 
-app.post("/register", function(req, res) {
-    var name=req.body.name;
-    var username=req.body.username;
-    var mobile= req.body.mobile;
-    var password=req.body.pass;
-    var confirmpass= req.body.confirmpass;
-    var newuser= {name: name, username: username, mobile: mobile, password: password};
-    usermodel.create(newuser, function(err, user){
-        if(err)
-        {
+app.post('/login',
+    passport.authenticate('local', {
+        failureRedirect: '/login',
+        failureFlash: true
+    }),
+    function(req, res) {
+        res.render('home', {person : req.user});
+    }
+);
+
+app.get('/logout', function(req, res){
+    req.logout();
+    res.redirect('/login');
+  });
+
+app.post("/register", function (req, res) {
+    var name = req.body.name;
+    var username = req.body.username;
+    var mobile = req.body.mobile;
+    var password = req.body.pass;
+    var confirmpass = req.body.confirmpass;
+    var newuser = { name: name, username: username, mobile: mobile, password: password };
+    usermodel.create(newuser, function (err, user) {
+        if (err) {
             console.log(err);
         }
-        else{
-            if(confirmpass===password){
+        else {
+            if (confirmpass === password) {
                 res.render("login");
             }
-            else{
+            else {
                 console.log("The two passwords didnt match. Try Again!");
                 res.render("register");
             }
         }
-    })    
+    })
 });
+
+
+
+function initializePassport(passport) {
+    passport.use(new LocalStrategy(
+        {
+            usernameField: 'username',
+            passwordField: 'pass'
+        },
+        function (username, password, done) {
+            usermodel.findOne({ username: username }, function (err, user) {
+                if (err) { return done(err); }
+                if (!user) {
+                    return done(null, false, { message: 'Incorrect username.' });
+                }
+                if (password !== user.password) {
+                    return done(null, false, { message: 'Incorrect password.' });
+                }
+                return done(null, user);
+            });
+        }
+    ));
+    passport.serializeUser(function (user, done) {
+        done(null, user.id);
+    });
+
+    passport.deserializeUser(function (id, done) {
+        User.findById(id, function (err, user) {
+            done(err, user);
+        });
+    });
+}
 
 app.listen(3040, "localhost", function () {
     console.log("Connected to server")
