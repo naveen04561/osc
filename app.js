@@ -4,6 +4,7 @@ var body = require('body-parser')
 var app = express()
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
+const session = require("node-sessionstorage")
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -50,6 +51,14 @@ app.get("/register", function (req, res) {
     res.render("register")
 })
 
+app.get('/home/:page', (req, res) => {
+    const pageName = req.params.page;
+    var person = session.getItem('user');
+    res.render(pageName, {
+        person : person
+    });
+});
+
 // app.get("/home", function (req, res) {
 //     res.render("home", { person: req.user });
 // })
@@ -82,6 +91,7 @@ app.post('/login',
         failureFlash: true
     }),
     function(req, res) {
+        session.setItem('user', req.user);
         res.render('home', {person : req.user});
     }
 );
