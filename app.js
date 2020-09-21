@@ -2,14 +2,13 @@ var express = require('express')
 var mongoose = require('mongoose')
 var body = require('body-parser')
 var app = express()
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const session = require("node-sessionstorage")
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
+var session = require("node-sessionstorage")
 
 app.use(passport.initialize());
 app.use(passport.session());
 initializePassport(passport);
-
 
 app.use(express.static('public'))
 app.set("view engine", "ejs")
@@ -57,7 +56,7 @@ app.get('/home/:page', (req, res) => {
     res.render(pageName, {
         person : person
     });
-});
+});    
 
 // app.get("/home", function (req, res) {
 //     res.render("home", { person: req.user });
