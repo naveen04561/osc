@@ -2,8 +2,6 @@ var express = require('express')
 var mongoose = require('mongoose')
 var body = require('body-parser')
 var app = express()
-const storage = require('sessionstorage')
-const stor = require('node-sessionstorage')
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 
