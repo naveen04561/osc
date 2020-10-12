@@ -16,7 +16,6 @@ app.use(body.urlencoded({ extended: true }))
 
 mongoose.connect("mongodb://localhost:27017/deliverysystem", { useUnifiedTopology: true, useNewUrlParser: true, useCreateIndex: true })
 
-
 var UserSchema = new mongoose.Schema({
     name: String,
     username: {
@@ -40,7 +39,18 @@ var UserSchema = new mongoose.Schema({
     }
 });
 
+var itemschema = new mongoose.Schema({
+    image: String,
+    name: String,
+    description: String,
+    price: Number, 
+})
+
+var itemmodel = mongoose.model("itemmodel", itemschema);
 var usermodel = mongoose.model("usermodel", UserSchema);
+
+var orderlist=['mango'];
+var frequency=[2];
 
 app.get("/login", function (req, res) {
     res.render("login")
@@ -58,31 +68,21 @@ app.get('/home/:page', (req, res) => {
     });
 });    
 
-// app.get("/home", function (req, res) {
-//     res.render("home", { person: req.user });
-// })
+app.get('/items/:itemname', (req,res)=>{
+    var c= req.params.itemname;
+    itemmodel.findOne({name: c}, function(err, item){
+        res.render('items', {item:item});
+    })
+});
 
-// app.post("/login", function(req, res) {
-//     var un=req.body.username;
-//     var p=req.body.pass;
-//     usermodel.findOne({username: un}, function(err, search){
-//         if(err){
-//             res.redirect("/login")
-//         }
-//         else if (p == search.password) {
-//             storage.setItem('person', search)
-//             stor.setItem('person', search);
-//             res.redirect("/home")
-//         }
-//         else if (p != search.password) {
-//             res.redirect("/login")
-//         }
-//         else {
-//             console.log(err)
-//             res.redirect("/login")
-//         }
-//     })    
-// });
+app.get('/logout', function (req, res) {
+    req.logout();
+    res.redirect('/login');
+});
+
+// app.get('/orders', function(req,res){
+//     res.render('orders', { orderlist: orderlist, frequency: frequency })
+// })
 
 app.post('/login',
     passport.authenticate('local', {
@@ -95,10 +95,17 @@ app.post('/login',
     }
 );
 
-app.get('/logout', function(req, res){
-    req.logout();
-    res.redirect('/login');
-  });
+app.post("/items/:itemname", function(req,res){
+    var itname = req.params.itemname;
+    var num= req.body.num;
+    itemmodel.findOne({ name: itname }, function (err, item) {
+        orderlist.push(item.name);
+        frequency.push(num);
+        res.render('orders', { orderlist: orderlist, frequency: frequency });
+    });
+    console.log(orderlist);
+    
+})
 
 app.post("/register", function (req, res) {
     var name = req.body.name;
@@ -122,8 +129,6 @@ app.post("/register", function (req, res) {
         }
     })
 });
-
-
 
 function initializePassport(passport) {
     passport.use(new LocalStrategy(
