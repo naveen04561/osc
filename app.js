@@ -41,6 +41,7 @@ var UserSchema = new mongoose.Schema({
 
 var itemschema = new mongoose.Schema({
     image: String,
+    title: String,
     name: String,
     description: String,
     price: Number, 
@@ -70,7 +71,7 @@ app.get('/home/:page', (req, res) => {
 
 app.get('/items/:itemname', (req,res)=>{
     var c= req.params.itemname;
-    itemmodel.findOne({name: c}, function(err, item){
+    itemmodel.findOne({title: c}, function(err, item){
         res.render('items', {item:item});
     })
 });
